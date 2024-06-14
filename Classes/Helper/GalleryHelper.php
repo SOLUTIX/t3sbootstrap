@@ -97,14 +97,15 @@ class GalleryHelper implements SingletonInterface
 		$galleryClass = 'gallery imageorient-'.$processedData['data']['imageorient'];
 		$galleryRowClass = '';
 		$imageorient = $processedData['data']['imageorient'];
-		$rowwidth = empty($processedData['rowwidth']) ? 0 : $processedData['rowwidth'];
+		$rowwidth = empty($processedData['rowwidth']) ? '' : $processedData['rowwidth'];
 		// Above or below (0,1,2,8,9,10)
 		if ( $imageorient < 11 ) {
 			if ( $imageorient == 0 || $imageorient == 8 ) {
 				// center
 				$galleryClass .= ' clearfix';
-				$galleryRowClass .= $rowwidth.' text-center mx-auto';
+				$galleryRowClass .= $rowwidth.' text-center';
 				$processedData['addmedia']['zoomOverlay'] = ' d-flex mx-auto';
+				$processedData['addmedia']['figureclass'] .= ' mx-auto';
 			}
 			if ( $imageorient == 1 || $imageorient == 9 ) {
 				// right

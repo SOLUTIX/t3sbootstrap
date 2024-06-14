@@ -164,7 +164,7 @@ CREATE TABLE tt_content (
 	tx_t3sbootstrap_container varchar(255) DEFAULT '' NOT NULL,
 	tx_t3sbootstrap_extra_class varchar(100) DEFAULT '' NOT NULL,
 	tx_t3sbootstrap_bgcolor varchar(30) DEFAULT '' NOT NULL,
-	tx_t3sbootstrap_bgopacity varchar(3) DEFAULT '' NOT NULL,
+	tx_t3sbootstrap_bgopacity varchar(4) DEFAULT '' NOT NULL,
 	tx_t3sbootstrap_contextcolor varchar(20) DEFAULT '' NOT NULL,
 	tx_t3sbootstrap_textcolor varchar(9) DEFAULT '' NOT NULL,
 	tx_t3sbootstrap_flexform mediumtext,
@@ -185,6 +185,7 @@ CREATE TABLE tt_content (
 	tx_t3sbootstrap_list_item varchar(255) DEFAULT '' NOT NULL,
 	tx_t3sbootstrap_gutters varchar(5) DEFAULT 'gx-4' NOT NULL,
 	tx_t3sbootstrap_verticalgutters varchar(5) DEFAULT 'mb-4' NOT NULL,
+	tx_t3sbootstrap_zoom_orig varchar(4) DEFAULT '' NOT NULL,
 );
 
 

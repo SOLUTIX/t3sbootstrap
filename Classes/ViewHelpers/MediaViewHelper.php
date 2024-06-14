@@ -67,12 +67,8 @@ class MediaViewHelper extends AbstractTagBasedViewHelper
 	 */
 	public function initializeArguments()
 	{
-/*#		parent::initializeArguments();
+#		parent::initializeArguments();
 
-Undeclared arguments passed to ViewHelper T3SBS\T3sbootstrap\ViewHelpers\MediaViewHelper: class, style. 
-Valid arguments are: file, additionalConfig, width, height, cropVariant, fileExtension, loading, decoding, srcset, sizes, breakpoints, imgtag, picturefill, lazyload, ratio, mobileNoRatio, shift, columns, placeholderSize, placeholderInline, ignoreFileExtensions
-*/
-# new
         $this->registerUniversalTagAttributes();
         $this->registerTagAttribute('alt', 'string', 'Specifies an alternate text for an image', false);
         $this->registerArgument('file', 'object', 'File', true);
@@ -248,12 +244,14 @@ Valid arguments are: file, additionalConfig, width, height, cropVariant, fileExt
 			$breakpointArr[$bpKey]['cropVariant'] = $breakpoint['cropVariant'];
 			$breakpointArr[$bpKey]['media'] = $breakpoint['media'];
 			$breakpointArr[$bpKey]['srcset'] = '';
-			foreach( explode(',', $breakpoint['srcset']) as $key=>$srcset ) {
-				if ($width > (int)$srcset) {
-					$breakpointArr[$bpKey]['srcset'] .= $srcset.',';
-				} else {
-					$breakpointArr[$bpKey]['srcset'] .= $srcset;
-					break;
+			if (!empty($breakpoint['srcset'])) {
+				foreach( explode(',', $breakpoint['srcset']) as $key=>$srcset ) {
+					if ($width > (int)$srcset) {
+						$breakpointArr[$bpKey]['srcset'] .= $srcset.',';
+					} else {
+						$breakpointArr[$bpKey]['srcset'] .= $srcset;
+						break;
+					}
 				}
 			}
 		}

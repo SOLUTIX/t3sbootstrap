@@ -27,7 +27,7 @@
 </f:asset.css>
 
 <div class="nav-item dropdown dm-toggler">
-	<a class="nav-link dropdown-toggle ps-lg-3"
+	<button class="nav-link dropdown-toggle ps-lg-3"
 		id="bd-theme"
 		type="button"
 		aria-expanded="false"
@@ -36,24 +36,24 @@
 		aria-label="Toggle theme (light)"
 	>
 		<svg class="bi me-2 theme-icon-active"><use href="#sun-fill"></use></svg>
-		<span class="d-lg-none ms-2" id="bd-theme-text">Toggle theme</span>
-	</a>
+		<span class="d-none ms-2" id="bd-theme-text">Toggle theme</span>
+	</button>
 	<div class="dropdown-menu dropdown-menu-end{config.navbar.dropdownAnimate}" style="--bs-dropdown-min-width: 8rem;">
-		<a type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="light">
+		<button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="light">
 			<svg class="bi me-2 opacity-50 theme-icon"><use href="#sun-fill"></use></svg>
 			Light
 			<svg class="d-none"><use href="#check2"></use></svg>
-		</a>
-		<a type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="dark">
+		</button>
+		<button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="dark">
 			<svg class="bi me-2 opacity-50 theme-icon"><use href="#moon-stars-fill"></use></svg>
 			Dark
 			<svg class="d-none"><use href="#check2"></use></svg>
-		</a>
-		<a type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="auto">
+		</button>
+		<button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="auto">
 			<svg class="bi me-2 opacity-50 theme-icon"><use href="#circle-half"></use></svg>
 			Auto
 			<svg class="d-none"><use href="#check2"></use></svg>
-		</a>
+		</button>
 	</div>
 </div>
 </html>

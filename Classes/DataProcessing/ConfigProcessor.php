@@ -9,6 +9,7 @@ use TYPO3\CMS\Core\Resource\FileRepository;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Domain\Repository\PageRepository;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Database\Query\QueryHelper;
 use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
@@ -39,13 +40,10 @@ class ConfigProcessor implements DataProcessorInterface
      */
     public function process(ContentObjectRenderer $cObj, array $contentObjectConfiguration, array $processorConfiguration, array $processedData)
     {
-        $request = $GLOBALS['TYPO3_REQUEST'];
+        /** @var \Psr\Http\Message\ServerRequestInterface $request */
+        $request = $cObj->getRequest();
         $settings = $contentObjectConfiguration['settings.'];
         $frontendController = $request->getAttribute('frontend.controller');
-        if (!$frontendController) {
-            $frontendController = self::getFrontendController();
-        }
-
         if (!empty($contentObjectConfiguration['settings.']['config.']['uid'])
              && is_numeric($contentObjectConfiguration['settings.']['config.']['uid'])) {
             $processedRecordVariables = $contentObjectConfiguration['settings.']['config.'];
@@ -78,7 +76,7 @@ class ConfigProcessor implements DataProcessorInterface
         $smallColumnsCurrent = (int)$currentPage['tx_t3sbootstrap_smallColumns'];
         $pageRepository = GeneralUtility::makeInstance(PageRepository::class);
         $rootlinePage = $pageRepository->getPage($processedRecordVariables['homepageUid']);
-        $smallColumnsRootline = (int)$rootlinePage['tx_t3sbootstrap_smallColumns'];
+        $smallColumnsRootline = !empty($rootlinePage['tx_t3sbootstrap_smallColumns']) ? (int)$rootlinePage['tx_t3sbootstrap_smallColumns'] : 3;
         $smallColumns = $smallColumnsCurrent ?: $smallColumnsRootline;
 
         // global override page data
@@ -92,7 +90,11 @@ class ConfigProcessor implements DataProcessorInterface
                     } elseif (($field === 'tx_t3sbootstrap_titlecolor' || $field === 'tx_t3sbootstrap_subtitlecolor') && str_starts_with($override, '--bs-')) {
                         $processedData['data'][$field] = 'var('.$override.')';
                     } else {
-                        $processedData['data'][$field] = $override;
+                        if ($processedData['data']['tx_t3sbootstrap_container'] === '0') {
+                            // no override if container = none
+                        } else {
+                            $processedData['data'][$field] = $override;
+                        }
                     }
                 }
             }
@@ -173,14 +175,18 @@ class ConfigProcessor implements DataProcessorInterface
         if ($processedRecordVariables['navbarEnable']) {
             // navbar menu
             $mainMenu = [];
-
             if (!empty($processedData['navbarMenu'])) {
                 foreach ($processedData['navbarMenu'] as $key=>$navbarMenu) {
                     $mainMenu[$key] = $navbarMenu;
                     if (!empty($navbarMenu['data']['tx_t3sbootstrap_fontawesome_icon'])) {
                         $mainMenu[$key]['faIcon'] = '<i class="'.$navbarMenu['data']['tx_t3sbootstrap_fontawesome_icon'].'"></i> ';
                     }
+                    $mainMenu[$key]['linkTitle'] = $navbarMenu['data']['title'];
+                    if (!empty($settings['navbar.']['noLinkTitle'])) {
+                        $mainMenu[$key]['linkTitle'] = '';
+                    }
                     if ($navbarMenu['data']['tx_t3sbootstrap_icon_only']) {
+                        $mainMenu[$key]['linkTitle'] = $navbarMenu['data']['title'];
                         $mainMenu[$key]['title'] = '';
                     }
                     $mainMenu[$key]['target'] = $navbarMenu['data']['target'] ? $navbarMenu['data']['target'] : '_self';
@@ -231,12 +237,9 @@ class ConfigProcessor implements DataProcessorInterface
             ? $processedRecordVariables['navbarImage'] : $contentObjectConfiguration['settings.']['navbar.']['image.']['defaultPath'];
 
             // container
-            if (!$processedRecordVariables['navbarContainer']) {
-                $processedData['config']['navbar']['container'] = '';
-            } else {
-                $processedData['config']['navbar']['containerposition'] = $processedRecordVariables['navbarContainer'];
-                $processedData['config']['navbar']['container'] = 'container';
-            }
+            $processedData['config']['navbar']['container'] = !empty($processedRecordVariables['navbarContainer'])
+             ? $processedRecordVariables['navbarContainer'] : '';
+            // inner container is required
             $processedData['config']['navbar']['innercontainer'] = $processedRecordVariables['navbarInnercontainer'] ?: 'container';
 
             // brand
@@ -305,19 +308,16 @@ class ConfigProcessor implements DataProcessorInterface
                 $navBarAttr .= ' data-colorschemes="'.$navbarColor.'"';
                 $navBarAttr .= ' data-color="navbar-'.$processedRecordVariables['navbarEnable'].'"';
             }
-
-            // sticky-top
-            if ($processedRecordVariables['navbarPlacement'] === 'sticky-top') {
-                $navBarAttr .= ' data-bs-toggle="sticky-onscroll"';
-            }
             $processedData['config']['navbar']['dataAttr'] = $navBarAttr;
 
             // placement
             if ($processedRecordVariables['navbarPlacement']) {
                 $processedData['config']['navbar']['placement'] = $processedRecordVariables['navbarPlacement'];
-                if (!empty($processedData['config']['navbar']['containerposition']) && $processedData['config']['navbar']['containerposition'] == 'outside') {
-                    $processedData['config']['navbar']['container'] =
-                    trim($processedData['config']['navbar']['container'].' '.$processedRecordVariables['navbarPlacement']);
+
+                // sticky-top & navbar container
+                if ($processedRecordVariables['navbarPlacement'] === 'sticky-top'
+                     && !empty($processedData['config']['navbar']['container'])) {
+                    $processedData['config']['navbar']['container'] = $processedData['config']['navbar']['container'].' sticky-top';
                 } else {
                     $navbarClass .= ' '.$processedRecordVariables['navbarPlacement'];
                 }
@@ -381,7 +381,7 @@ class ConfigProcessor implements DataProcessorInterface
                     $processedData['config']['navbar']['sbmauto'] = ' ms-auto';
                 }
                 if ($processedData['config']['navbar']['mauto'] == ' ms-auto') {
-                    $processedData['config']['navbar']['sbmauto'] = ' float-right ms-3';
+                    $processedData['config']['navbar']['sbmauto'] = ' float-end ms-3';
                 }
                 if ($processedData['config']['navbar']['mauto'] == 'center') {
                     $processedData['config']['navbar']['sbmauto'] = '';
@@ -620,7 +620,7 @@ class ConfigProcessor implements DataProcessorInterface
                 ->count('uid')
                 ->from('tt_content')
                 ->where(
-                    $queryBuilder->expr()->eq('colPos', $queryBuilder->createNamedParameter(20, \PDO::PARAM_INT))
+                    $queryBuilder->expr()->eq('colPos', $queryBuilder->createNamedParameter(20, Connection::PARAM_INT))
                 )
             ->executeQuery()
             ->fetchOne();
@@ -638,7 +638,7 @@ class ConfigProcessor implements DataProcessorInterface
                 ->count('uid')
                 ->from('tt_content')
                 ->where(
-                    $queryBuilder->expr()->eq('colPos', $queryBuilder->createNamedParameter(21, \PDO::PARAM_INT))
+                    $queryBuilder->expr()->eq('colPos', $queryBuilder->createNamedParameter(21, Connection::PARAM_INT))
                 )
             ->executeQuery()
             ->fetchOne();
@@ -681,11 +681,11 @@ class ConfigProcessor implements DataProcessorInterface
                  )
              )
             ->andWhere(
-                $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter($languageUid, \PDO::PARAM_INT))
+                $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter($languageUid, Connection::PARAM_INT))
             )
              ->executeQuery();
 
-        $navbarColors = $result->fetchAll();
+        $navbarColors = $result->fetchAllAssociative();
         $navbarColorCSS = '';
 
         if (is_array($navbarColors)) {
@@ -745,7 +745,7 @@ class ConfigProcessor implements DataProcessorInterface
             $statement = $queryBuilder->select('uid')
                 ->from('pages')
                 ->where(
-                    $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($id, \PDO::PARAM_INT)),
+                    $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($id, Connection::PARAM_INT)),
                     $queryBuilder->expr()->eq('sys_language_uid', 0),
                     QueryHelper::stripLogicalOperatorPrefix($permsClause)
                 )
@@ -823,14 +823,4 @@ class ConfigProcessor implements DataProcessorInterface
         return $mainMenu;
     }
 
-
-    /**
-     * Returns $typoScriptFrontendController TypoScriptFrontendController
-     *
-     * @return TypoScriptFrontendController
-     */
-    protected function getFrontendController(): TypoScriptFrontendController
-    {
-        return $GLOBALS['TSFE'];
-    }
 }

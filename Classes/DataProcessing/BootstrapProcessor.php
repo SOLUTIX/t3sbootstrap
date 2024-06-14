@@ -68,8 +68,9 @@ class BootstrapProcessor implements DataProcessorInterface
             return $processedData;
         }
 
+        /** @var \Psr\Http\Message\ServerRequestInterface $request */
+        $request = $cObj->getRequest();
         $extConf = GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('t3sbootstrap');
-
         $cType = $processedData['data']['CType'];
         $parentCType = '';
         $flexFormService = GeneralUtility::makeInstance(FlexFormService::class);
@@ -102,15 +103,38 @@ class BootstrapProcessor implements DataProcessorInterface
         $processedData['dataAnimate'] = '';
         $processedData['isAnimateCss'] = false;
         $processedData['animateCssRepeat'] = false;
-        $processedData['codesnippet'] = false;
         $processedData['containsVideo'] = false;
         $processedData['containerError'] = false;
+        $processedData['lightBox'] = false;
         $processedData['data']['configuid'] = (int)$processorConfiguration['configuid'];
         $processedData['header_fontawesome'] = '';
 
         $sectionMenuClass = '';
         if (!empty($contentObjectConfiguration['settings.']['sectionMenuClass'])) {
             $sectionMenuClass = $contentObjectConfiguration['settings.']['sectionMenuClass'];
+        }
+
+        if (!empty($contentObjectConfiguration['settings.']['shortcutsremove'])) {
+            $pageArguments = $request->getAttribute('routing');
+            $currentUid = $pageArguments->getPageId();            
+            $footerPid = !empty($processorConfiguration['footerPid']) ? (int) $processorConfiguration['footerPid'] : 0;
+            $removeArr = GeneralUtility::trimExplode(',', $contentObjectConfiguration['settings.']['shortcutsremove']);
+            if ($processedData['data']['pid'] !== $currentUid && $processedData['data']['pid'] !== $footerPid) {
+                // if contentByPid for collapsible_accordion or tabs_tab
+                foreach($removeArr as $remove) {
+                    if (str_contains($processedData['data']['frame_class'], substr($remove,6))) {
+                        $processedData['data']['frame_class'] = 'default';
+                    }
+                }
+            }
+            if ($cType == 'shortcut' && !empty($parentCType)) {
+                // remove a class or any string from shortcuts if in parent ce/wrapper
+                foreach($removeArr as $remove) {
+                    if (str_contains($processedData['shortcuts'], $remove)) {
+                        $processedData['shortcuts'] = self::removeChar($processedData['shortcuts'], $remove);
+                    }
+                }
+            }
         }
 
         // class
@@ -271,16 +295,19 @@ class BootstrapProcessor implements DataProcessorInterface
         #
         # plug-ins
         #
-        #if ( $cType == 'list' ) {}
+        if ($cType == 'news_newsdetail') {
+            $processedData['lightBox'] = true;
+        }
 
         // media
-        if ($processedData['data']['assets'] || $processedData['data']['image'] || $processedData['data']['media']) {
+        if ($processedData['data']['assets'] || $processedData['data']['image'] || $processedData['data']['media'] || $cType === 't3sbs_gallery') {
             $mediaElementHelper = GeneralUtility::makeInstance(MediaElementHelper::class);
             $processedData = $mediaElementHelper->getProcessedData($processedData, $extConf, $contentObjectConfiguration['settings.']['breakpoint'], $parentflexconf);
             $fileRepository = GeneralUtility::makeInstance(FileRepository::class);
             $fileObjects = $fileRepository->findByRelation('tt_content ', 'assets', $processedData['data']['uid']);
             $fileParts = [];
             $processedData['addmedia']['ratioClass'] = 'ratio-16x9';
+            $processedData['addmedia']['origImageZoom'] = $processedData['data']['tx_t3sbootstrap_zoom_orig'];
             foreach ($fileObjects as $key=>$fileObject) {
                 if ($fileObject->getType() === 4) {
                     $fileConfig = $fileObject->getStorage()->getConfiguration();
@@ -313,20 +340,13 @@ class BootstrapProcessor implements DataProcessorInterface
                 $processedData['lightBox'] = true;
             }
             // lightbox
-            if ($cType == 't3sbs_gallery' || !empty($processedData['data']['image_zoom'])) {
+            if ($cType === 't3sbs_gallery' || !empty($processedData['data']['image_zoom'])) {
                 $processedData['lightBox'] = true;
             }
         }
 
-        // codesnippet
-        if (array_key_exists('codesnippet', $extConf) && $extConf['codesnippet'] === '1' && $processedData['data']['bodytext']) {
-            if (str_contains($processedData['data']['bodytext'], '<pre>')) {
-                $processedData['codesnippet'] = true;
-            }
-        }
-
         // child of autoLayout_row
-        if ($parentCType == 'autoLayout_row') {
+        if ($parentCType === 'autoLayout_row') {
             $processedData['newLine'] = $flexconf['newLine'] ? true : false;
             $processedData['class'] .= $classHelper->getAutoLayoutClass($flexconf);
         }
@@ -381,12 +401,11 @@ class BootstrapProcessor implements DataProcessorInterface
     }
 
 
-
     /**
      * @param array $animationSettingsArray
      * @return string
      */
-    private function generateAnimationAttributeSettingsFromAnimationsArray(array $animationSettingsArray)
+    private function generateAnimationAttributeSettingsFromAnimationsArray(array $animationSettingsArray): string
     {
         $animationSettings = '';
 
@@ -403,4 +422,21 @@ class BootstrapProcessor implements DataProcessorInterface
         }
         return ' '.$animationSettings;
     }
+
+
+    /**
+     * @param string $s
+     * @param string $c
+     * @return string
+     */
+    function removeChar(string $s, string $c): string
+    {
+        $s = str_replace($c, '', $s);
+        if (str_contains($s, $c)) {
+            self::removeChar($s, $c);
+        }
+        return $s;
+    }
+
+
 }
