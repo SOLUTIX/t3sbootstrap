@@ -8,6 +8,7 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\SingletonInterface;
+use TYPO3\CMS\Core\Context\Context;
 
 /*
  * This file is part of the TYPO3 extension t3sbootstrap.
@@ -58,9 +59,9 @@ class Card implements SingletonInterface
         $cardData['dimensions']['width'] = $processedData['data']['imagewidth'];
         $cardData['dimensions']['height'] = $processedData['data']['imageheight'];
         // class
-		$cardClass = !empty($processedData['class']) ? $processedData['class'] : '';
-		$cardClass = 'card'.$cardClass;
-		$cardClass .= !empty($flexconf['button']['stretchedLink']) ? ' ce-link-content' : '';
+        $cardClass = !empty($processedData['class']) ? $processedData['class'] : '';
+        $cardClass = 'card'.$cardClass;
+        $cardClass .= !empty($flexconf['button']['stretchedLink']) ? ' ce-link-content' : '';
         // image
         if (!empty($cardData['image']['overlay'])) {
             $cardClass .= ' overflow-hidden';
@@ -115,16 +116,24 @@ class Card implements SingletonInterface
         } else {
             $cardClass .= $processedData['data']['tx_t3sbootstrap_header_position'] ? ' '.$processedData['data']['tx_t3sbootstrap_header_position'] : '';
         }
+
         // list group
         $cardData['list'] = [];
         if (!empty($processedData['data']['tx_t3sbootstrap_list_item'])) {
+            $languageAspect = GeneralUtility::makeInstance(Context::class)->getAspect('language');
+            $sysLanguageUid = $languageAspect->getContentId() ?: 0;
+            $parentid = $processedData['data']['uid'];
+            if ( !empty($sysLanguageUid) && !empty($processedData['data']['_LOCALIZED_UID']) ) {
+                $parentid = $processedData['data']['_LOCALIZED_UID'];
+            } 
             $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
             $queryBuilder = $connectionPool->getQueryBuilderForTable('tx_t3sbootstrap_list_item_inline');
             $listGroup = $queryBuilder
                     ->select('listitem')
                     ->from('tx_t3sbootstrap_list_item_inline')
                     ->where(
-                        $queryBuilder->expr()->eq('parentid', $queryBuilder->createNamedParameter($processedData['data']['uid'], Connection::PARAM_INT))
+                        $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter($sysLanguageUid, Connection::PARAM_INT)),
+                        $queryBuilder->expr()->eq('parentid', $queryBuilder->createNamedParameter($parentid, Connection::PARAM_INT))
                     )
                     ->executeQuery()
                     ->fetchAllAssociative();
