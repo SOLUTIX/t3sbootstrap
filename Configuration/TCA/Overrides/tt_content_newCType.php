@@ -777,6 +777,7 @@ $tempContentColumns = [
         ]
     ],
     'tx_t3sbootstrap_bodytext' => [
+        'l10n_mode' => 'prefixLangTitle',
         'label' => 'Text bottom ',
         'config' => [
             'type' => 'text',
@@ -797,6 +798,7 @@ $tempContentColumns = [
         ],
     ],
     'tx_t3sbootstrap_cardfooter' => [
+        'l10n_mode' => 'prefixLangTitle',
         'label' => 'Card Header',
         'config' => [
             'type' => 'input',
@@ -805,6 +807,7 @@ $tempContentColumns = [
         ],
     ],
     'tx_t3sbootstrap_list_item' => [
+        'l10n_mode' => 'prefixLangTitle',
         'label' => 'List Group',
         'config' => [
             'type' => 'inline',
