@@ -13,7 +13,7 @@
 				<config>
 					<type>input</type>
 					<size>25</size>
-					<eval>required</eval>
+					<required>true</required>
 					<default>row-cols-1 row-cols-md-3 row-cols-lg-4 g-4</default>
 				</config>
 			</settings.list.cardDeck.rowColClass>
@@ -24,7 +24,7 @@
 				<config>
 					<type>input</type>
 					<size>25</size>
-					<eval>required</eval>
+					<required>true</required>
 					<default>col-xs-12 col-sm-6 col-lg-3 mb-3</default>
 				</config>
 			</settings.list.masonry.class>
@@ -86,12 +86,21 @@
 					</or>
 				</displayCond>
 				<config>
-					<type>input</type>
+					<type>number</type>
 					<size>5</size>
-					<eval>int</eval>
 					<default></default>
 				</config>
 			</settings.dummyImageUid>
+
+			<settings.list.noimage>
+				<label>No images in "Horizontal Cards" list view - 100% width for "card-body"</label>				
+				<displayCond>FIELD:template.settings.templateLayout:=:71</displayCond>
+				<config>
+					<type>check</type>
+				</config>
+			</settings.list.noimage>
+
+
 
 			<!-- Detail PlugIn -->
 
@@ -123,9 +132,8 @@
 				  <label>Grid for the left column (only if media) - Detail view</label>
 					<displayCond>FIELD:template.settings.templateLayout:=:81</displayCond>
 				  <config>
-					  <type>input</type>
+					  <type>number</type>
 					  <size>5</size>
-					  <eval>int</eval>
 					  <default>7</default>
 				  </config>
 			  </settings.detail.leftGrid>

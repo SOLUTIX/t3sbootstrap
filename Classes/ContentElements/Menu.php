@@ -1,10 +1,10 @@
 <?php
+
 declare(strict_types=1);
 
 namespace T3SBS\T3sbootstrap\ContentElements;
 
 use TYPO3\CMS\Core\SingletonInterface;
-use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
 
 /*
  * This file is part of the TYPO3 extension t3sbootstrap.
@@ -20,20 +20,21 @@ class Menu implements SingletonInterface
 	 */
 	public function getProcessedData(array $processedData, array $flexconf, string $cType): array
 	{
-			$processedData['menudirection'] = ' '.$flexconf['menudirection'];
+			$processedData['menudirection'] = !empty($flexconf['menudirection']) ? ' '.$flexconf['menudirection'] : null;
 			$processedData['menupills'] = !empty($flexconf['menupills']) ? ' nav-pills' :'';
-			if (!empty($flexconf['menudirection']) && $flexconf['menudirection'] == 'flex-row') {
+			if ($processedData['menudirection'] === ' flex-row') {
 				$processedData['menuHorizontalAlignment'] = !empty($flexconf['menuHorizontalAlignment'])
 				 ? ' '.$flexconf['menuHorizontalAlignment'] : ' justify-content-end';
 			}
-			if ( $cType == 'menu_section' ) {
+			if ( $cType === 'menu_section' ) {
 				$processedData['pageLink'] = FALSE;
 				# if more than 1 page for section-menu
 				if (count(explode( ',' , (string) $processedData['data']['pages'])) > 1) {
 					$processedData['pageLink'] = TRUE;
 				} else {
 					// if current page is selected
-					$frontendController = self::getFrontendController();
+			        $request = $GLOBALS['TYPO3_REQUEST'];
+			        $frontendController = $request->getAttribute('frontend.controller');
 					if ( $frontendController->id == $processedData['data']['pid'] ) {
 						$processedData['onlyCurrentPageSelected'] = TRUE;
 					} else {
@@ -41,20 +42,11 @@ class Menu implements SingletonInterface
 					}
 				}
 			}
-			if (!empty($flexconf['menuHorizontalAlignment']) && $flexconf['menuHorizontalAlignment'] == 'nav-fill variant') {
+			if (!empty($flexconf['menuHorizontalAlignment']) && $flexconf['menuHorizontalAlignment'] === 'nav-fill variant') {
 				$processedData['menupills'] = '';
 			}
 
 		return $processedData;
-	}
-
-
-	/**
-	 * Returns the frontend controller
-	 */
-	protected function getFrontendController(): TypoScriptFrontendController
-	{
-		return $GLOBALS['TSFE'];
 	}
 
 }

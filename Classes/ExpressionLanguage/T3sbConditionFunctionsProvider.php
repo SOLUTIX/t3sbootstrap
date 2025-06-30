@@ -7,10 +7,10 @@ namespace T3SBS\T3sbootstrap\ExpressionLanguage;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
-use TYPO3\CMS\Core\Http\ApplicationType;
 use Symfony\Component\ExpressionLanguage\ExpressionFunction;
 use Symfony\Component\ExpressionLanguage\ExpressionFunctionProviderInterface;
-use T3SBS\T3sbootstrap\Domain\Repository\ConfigRepository;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Connection;
 
 /*
  * This file is part of the TYPO3 extension t3sbootstrap.
@@ -40,7 +40,19 @@ class T3sbConditionFunctionsProvider implements ExpressionFunctionProviderInterf
         }, function ($arguments, $str) {
             $extConf = GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('t3sbootstrap');
 
-            return $extConf[$str];
+			if ($str === 'extNews') {	
+				if ( !empty($extConf[$str]) && ExtensionManagementUtility::isLoaded('news') ) {
+					return '1';
+				}
+
+                return '0';
+            }
+
+            if ( !empty($extConf[$str]) ) {
+                return '1';
+            }
+
+            return '0';
         });
     }
 
@@ -72,23 +84,43 @@ class T3sbConditionFunctionsProvider implements ExpressionFunctionProviderInterf
 
     protected function getColPosList(): ExpressionFunction
     {
-        return new ExpressionFunction('colPosList', function ($str) {
-            // Not implemented
-        }, function ($arguments, $str) {
-            $result = false;
 
-            if ($_GET['id'] ?? 0 && ApplicationType::fromRequest($GLOBALS['TYPO3_REQUEST'])->isBackend()) {
-                $pid = (int)$_GET['id'];
-                $configRepository = GeneralUtility::makeInstance(ConfigRepository::class);
-                $config = $configRepository->findOneByPid($pid);
+    return new ExpressionFunction(
+        'colPosList',
+        static fn () => null, // Not implemented, we only use the evaluator
+        static function ($arguments, $str) {
+
+            $result = false;
+            if ( !empty($arguments['page']['uid']) ) {
+                $pid = $arguments['page']['uid'];
+
+                $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
+                $queryBuilder = $connectionPool->getQueryBuilderForTable('tx_t3sbootstrap_domain_model_config');
+                $result = $queryBuilder
+                    ->select('jumbotron_enable', 'footer_enable', 'expandedcontent_enabletop', 'expandedcontent_enablebottom')
+                    ->from('tx_t3sbootstrap_domain_model_config')
+                    ->where(
+                        $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($pid, Connection::PARAM_INT))
+                    )
+                    ->executeQuery();
+
+                $config = $result->fetchAssociative();
 
                 if (empty($config) && is_array($arguments['tree']->rootLineIds)) {
                     $rootLineIdsArray = array_reverse($arguments['tree']->rootLineIds);
                     unset($rootLineIdsArray[count($rootLineIdsArray)-1]);
                     unset($rootLineIdsArray[0]);
-
                     foreach ($rootLineIdsArray as $id) {
-                        $config = $configRepository->findOneByPid($id);
+
+                        $result = $queryBuilder
+                            ->select('jumbotron_enable', 'footer_enable', 'expandedcontent_enabletop', 'expandedcontent_enablebottom')
+                                ->from('tx_t3sbootstrap_domain_model_config')
+                            ->where(
+                                $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($id, Connection::PARAM_INT))
+                            )
+                            ->executeQuery();
+
+                        $config = $result->fetchAssociative();
                         if (!empty($config)) {
                             break;
                         }
@@ -96,107 +128,110 @@ class T3sbConditionFunctionsProvider implements ExpressionFunctionProviderInterf
                 }
 
                 if (!empty($config)) {
-                    if ($config->getJumbotronEnable()) {
-                        if ($config->getFooterEnable()) {
+                    if ( !empty($config['jumbotron_enable']) ) {
+                        if ( !empty($config['footer_enable']) )  {
                             // Content, Jumbotron & Footer
-                            if ($config->getExpandedcontentEnabletop()) {
-                                if ($str == 'AllandTop') {
+                            if ( empty($config['expandedcontent_enabletop']) && empty($config['expandedcontent_enablebottom']) ) {
+                                if ($str === 'All') {
                                     $result = true;
                                 }
-                            }
-                            if ($config->getExpandedcontentEnablebottom()) {
-                                if ($str == 'AllandBottom') {
-                                    $result = true;
-                                }
-                            }
-                            if ($config->getExpandedcontentEnabletop() && $config->getExpandedcontentEnablebottom()) {
-                                if ($str == 'AllandTopBottom') {
-                                    $result = true;
-                                }
-                            }
-                            if (!$config->getExpandedcontentEnabletop() && !$config->getExpandedcontentEnablebottom()) {
-                                if ($str == 'All') {
-                                    $result = true;
+                            } else {
+                                if ( !empty($config['expandedcontent_enabletop']) && !empty($config['expandedcontent_enablebottom']) ) {
+                                    if ($str === 'AllandTopBottom') {
+                                        $result = true;
+                                    }
+                                } else {
+                                    if ( !empty($config['expandedcontent_enabletop']) ) {
+                                        if ($str === 'AllandTop') {
+                                            $result = true;
+                                        }
+                                    }
+                                    if ( !empty($config['expandedcontent_enablebottom']) ) {
+                                        if ($str === 'AllandBottom') {
+                                            $result = true;
+                                        }
+                                    }
                                 }
                             }
                         } else {
                             // Content & Jumbotron
-                            if ($str == 'Jumbotron') {
-                                $result = true;
-                            }
-                            if ($config->getExpandedcontentEnabletop()) {
-                                if ($str == 'JumbotronandTop') {
+                            if ( !$config['expandedcontent_enabletop'] && !$config['expandedcontent_enablebottom'] ) {
+                                if ($str === 'Jumbotron') {
                                     $result = true;
                                 }
-                            }
-                            if ($config->getExpandedcontentEnablebottom()) {
-                                if ($str == 'JumbotronandBottom') {
-                                    $result = true;
-                                }
-                            }
-                            if ($config->getExpandedcontentEnabletop() && $config->getExpandedcontentEnablebottom()) {
-                                if ($str == 'JumbotronandTopBottom') {
-                                    $result = true;
+                            } else {
+                                if ( $config['expandedcontent_enabletop'] && $config['expandedcontent_enablebottom'] ) {
+                                    if ($str === 'JumbotronandTopBottom') {
+                                        $result = true;
+                                    }
+                                } else {
+
+                                    if ( $config['expandedcontent_enabletop'] ) {
+                                        if ($str === 'JumbotronandTop') {
+                                            $result = true;
+                                        }
+                                    }
+                                    if ($config['expandedcontent_enablebottom']) {
+                                        if ($str === 'JumbotronandBottom') {
+                                            $result = true;
+                                        }
+                                    }
                                 }
                             }
                         }
                     } else {
-                        if ($config->getFooterEnable()) {
+                        if ($config['footer_enable']) {
                             // Content & Footer
-                            if ($str == 'Footer') {
+                            if ( !$config['expandedcontent_enabletop'] && !$config['expandedcontent_enablebottom'] ) {
+                                if ($str === 'Footer') {
+                                    $result = true;
+                                }
+                            } else {
+                                if ( $config['expandedcontent_enabletop'] && $config['expandedcontent_enablebottom'] ) {
+                                    if ($str === 'FooterandTopBottom') {
+                                        $result = true;
+                                    }
+                                } else {
+                                    if ($config['expandedcontent_enabletop'] && $str === 'FooterandTop') {
+                                        $result = true;
+                                    }
+                                    if ($config['expandedcontent_enablebottom'] && $str === 'FooterandBottom') {
+                                        $result = true;
+                                    }
+                                }
+                            }
+                        } elseif ( !$config['expandedcontent_enabletop'] && !$config['expandedcontent_enablebottom'] ) {
+                            if ($str === 'Content') {
                                 $result = true;
                             }
-                            if ($config->getExpandedcontentEnabletop()) {
-                                if ($str == 'FooterandTop') {
-                                    $result = true;
-                                }
-                            }
-                            if ($config->getExpandedcontentEnablebottom()) {
-                                if ($str == 'FooterandBottom') {
-                                    $result = true;
-                                }
-                            }
-
-                            if ($config->getExpandedcontentEnabletop() && $config->getExpandedcontentEnablebottom()) {
-                                if ($str == 'FooterandTopBottom') {
-                                    $result = true;
-                                }
+                        } elseif ( $config['expandedcontent_enabletop'] && $config['expandedcontent_enablebottom'] ) {
+                            if ($str === 'ContentandTopBottom') {
+                                $result = true;
                             }
                         } else {
-                            // Content only (no Jumbotron & no Footer)
-                            if ($str == 'Content') {
+                            if ($config['expandedcontent_enabletop'] && $str === 'ContentandTop') {
                                 $result = true;
                             }
-                            if ($config->getExpandedcontentEnabletop()) {
-                                if ($str == 'ContentandTop') {
-                                    $result = true;
-                                }
-                            }
-                            if ($config->getExpandedcontentEnablebottom()) {
-                                if ($str == 'ContentandBottom') {
-                                    $result = true;
-                                }
-                            }
-                            if ($config->getExpandedcontentEnabletop() && $config->getExpandedcontentEnablebottom()) {
-                                if ($str == 'ContentandTopBottom') {
-                                    $result = true;
-                                }
+                            if ($config['expandedcontent_enablebottom'] && $str === 'ContentandBottom') {
+                                $result = true;
                             }
                         }
                     }
                 }
             }
 
-            return $result;
+            return $result === true;
         });
     }
+
 
     protected function getExtensionLoaded(): ExpressionFunction
     {
         return new ExpressionFunction('loaded', function () {
             // Not implemented, we only use the evaluator
         }, function ($arguments, $extKey) {
-            return ExtensionManagementUtility::isLoaded($extKey);
+            	return ExtensionManagementUtility::isLoaded($extKey);
         });
     }
+
 }

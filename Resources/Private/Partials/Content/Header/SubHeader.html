@@ -2,29 +2,29 @@
 <f:if condition="{subheader}">
 	<f:switch expression="{layout}">
 		<f:case value="1">
-			<h2 class="subheader{f:if(condition: '{subheaderColor}',then: ' text-{subheaderColor}')}">
+			<p class="subheader h2{f:if(condition: '{subheaderColor}',then: ' text-{subheaderColor}')}">
 				{subheader -> f:format.raw()}
-			</h2>
+			</p>
 		</f:case>
 		<f:case value="2">
-			<h3 class="subheader{f:if(condition: '{subheaderColor}',then: ' text-{subheaderColor}')}">
+			<p class="subheader h3{f:if(condition: '{subheaderColor}',then: ' text-{subheaderColor}')}">
 				{subheader -> f:format.raw()}
-			</h3>
+			</p>
 		</f:case>
 		<f:case value="3">
-			<h4 class="subheader{f:if(condition: '{subheaderColor}',then: ' text-{subheaderColor}')}">
+			<p class="subheader h4{f:if(condition: '{subheaderColor}',then: ' text-{subheaderColor}')}">
 				{subheader -> f:format.raw()}
-			</h4>
+			</p>
 		</f:case>
 		<f:case value="4">
-			<h5 class="subheader{f:if(condition: '{subheaderColor}',then: ' text-{subheaderColor}')}">
+			<p class="subheader h5{f:if(condition: '{subheaderColor}',then: ' text-{subheaderColor}')}">
 				{subheader -> f:format.raw()}
-			</h5>
+			</p>
 		</f:case>
 		<f:case value="5">
-			<h6 class="subheader{f:if(condition: '{subheaderColor}',then: ' text-{subheaderColor}')}">
+			<p class="subheader h6{f:if(condition: '{subheaderColor}',then: ' text-{subheaderColor}')}">
 				{subheader -> f:format.raw()}
-			</h6>
+			</p>
 		</f:case>
 		<f:defaultCase>
 			<f:if condition="{default}">

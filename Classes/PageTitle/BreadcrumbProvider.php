@@ -1,4 +1,5 @@
 <?php
+	
 declare(strict_types=1);
 
 namespace T3SBS\T3sbootstrap\PageTitle;
@@ -17,25 +18,28 @@ use TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface;
 class BreadcrumbProvider extends AbstractPageTitleProvider
 {
 
-	public function injectConfigurationManager(ConfigurationManagerInterface $configurationManager)
-	{
-		$this->configurationManager = $configurationManager;
-	}
+    /**
+     * @var ConfigurationManagerInterface
+     */
+    protected ConfigurationManagerInterface $configurationManager;
+
 
 	/**
 	 * @param string $title
 	 */
-	public function setTitle(string $title)
+	public function setTitle(string $title): void
 	{
-		$this->configurationManager = GeneralUtility::makeInstance(ConfigurationManager::class);
-		$settings = $this->configurationManager->getConfiguration(
+		$configurationManager = GeneralUtility::makeInstance(ConfigurationManager::class);
+		$settings = $configurationManager->getConfiguration(
 			ConfigurationManagerInterface::CONFIGURATION_TYPE_SETTINGS,
 			't3sbootstrap',
 			'm1'
 		);
 
 		$this->title = '';
-		$rootline = $GLOBALS['TSFE']->rootLine;
+		$request = $GLOBALS['TYPO3_REQUEST'];
+		$frontendController = $request->getAttribute('frontend.controller');
+		$rootline = $frontendController->rootLine;
 		foreach (array_reverse($rootline) as $key=>$titlePart) {
 			if ($key !== 0) {
 				$this->title .= $titlePart['title'];

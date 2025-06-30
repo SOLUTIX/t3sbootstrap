@@ -10,8 +10,6 @@
 {styleInline -> f:format.raw()}
 </f:asset.css>
 </f:if>
-
-
 <f:if condition="{parentCType} == 'button_group'">
 	 <f:then>
 		<f:if condition="{slideInButton}">
@@ -60,10 +58,10 @@
 			 <f:then>
 			 	<div class="btn-group{f:if(condition: dropdowndirection,then: ' {dropdowndirection}')}" role="group">
 					<f:render section="ButtonGroupLink" arguments="{_all}" />
-			 	</div>	 
+			 	</div>
 			 </f:then>
 			 <f:else>
-				<f:render section="ButtonGroupLink" arguments="{_all}" />	 
+				<f:render section="ButtonGroupLink" arguments="{_all}" />
 			 </f:else>
 		</f:if>
 	</f:then>
@@ -73,7 +71,13 @@
 			class="{trimClass}"
 			title="{linkTitle}"
 			additionalAttributes="{id: 'c{data.uid}', role: 'button'}">
-			{headerFontawesome -> f:format.raw()} {data.header -> f:format.raw()}
+			<f:if condition="{data.header_icon} && !{data.tx_t3sbootstrap_iconPositionBehind}">
+				<t3sb:icon iconfig="{data.header_icon}" additionalAttributes="{class:'me-1'}" />
+			</f:if>
+			{data.header -> f:format.raw()}
+			<f:if condition="{data.header_icon} && {data.tx_t3sbootstrap_iconPositionBehind}">
+				<t3sb:icon iconfig="{data.header_icon}" additionalAttributes="{class:'ms-1'}" />
+			</f:if>
 		</f:link.typolink>
 	</f:else>
 </f:if>
@@ -102,7 +106,13 @@
 			class="m-0 rounded-0{class}"
 			title="{linkTitle}"
 			additionalAttributes="{id: 'c{data.uid}', role: 'button'}">
-			{headerFontawesome -> f:format.raw()} {data.header -> f:format.raw()}
+			<f:if condition="{data.header_icon} && !{data.tx_t3sbootstrap_iconPositionBehind}">
+				<t3sb:icon iconfig="{data.header_icon}" additionalAttributes="{class:'me-1'}" />
+			</f:if>
+			{data.header -> f:format.raw()}
+			<f:if condition="{data.header_icon} && {data.tx_t3sbootstrap_iconPositionBehind}">
+				<t3sb:icon iconfig="{data.header_icon}" additionalAttributes="{class:'ms-1'}" />
+			</f:if>
 		</f:link.typolink>
 	</f:then>
 	<f:else>
@@ -111,7 +121,13 @@
 			class="m-0 rounded-0{class}"
 			title="{linkTitle}"
 			additionalAttributes="{id: 'c{data.uid}', role: 'button'}">
-			<i class="fa-solid fa-ban text-danger me-1"></i> {data.header -> f:format.raw()}
+			<f:if condition="{data.header_icon} && !{data.tx_t3sbootstrap_iconPositionBehind}">
+				<t3sb:icon iconfig="{data.header_icon}" additionalAttributes="{class:'me-1'}" />
+			</f:if>
+			{data.header -> f:format.raw()}
+			<f:if condition="{data.header_icon} && {data.tx_t3sbootstrap_iconPositionBehind}">
+				<t3sb:icon iconfig="{data.header_icon}" additionalAttributes="{class:'ms-1'}" />
+			</f:if>
 		</f:link.typolink>
 	</f:else>
 </f:if>
@@ -123,13 +139,22 @@
 		class="{trimClass} dropdown-toggle"
 		title="{linkTitle}"
 		additionalAttributes="{id: 'c{data.uid}', role: 'button', data-bs-toggle: 'dropdown', aria-expanded: 'false'}">
-		{headerFontawesome -> f:format.raw()} {data.header -> f:format.raw()}
+			<f:if condition="{data.header_icon} && !{data.tx_t3sbootstrap_iconPositionBehind}">
+			<t3sb:icon iconfig="{data.header_icon}" additionalAttributes="{class:'me-1'}" />
+		</f:if>
+		{data.header -> f:format.raw()}
+		<f:if condition="{data.header_icon} && {data.tx_t3sbootstrap_iconPositionBehind}">
+			<t3sb:icon iconfig="{data.header_icon}" additionalAttributes="{class:'ms-1'}" />
+		</f:if>
 	</f:link.typolink>
 	<ul class="dropdown-menu" aria-labelledby="c{data.uid}">
 		<f:for each="{dropdownItems}" as="dropdownItem">
-			<li>				
+			<li>
 				<f:link.typolink parameter="{dropdownItem.link}" class="dropdown-item {dropdownItem.class}" target="{dropdownItem.target}">
-					{dropdownItem.title}
+					<f:if condition="{dropdownItem.page_icon}">
+						<t3sb:icon iconfig="{dropdownItem.page_icon}" additionalAttributes="{class:'me-1'}" />
+					</f:if>
+					<f:cObject typoscriptObjectPath="lib.linkTitle" data='{dropdownItem.target}'/>
 				</f:link.typolink>
 			</li>
 		</f:for>

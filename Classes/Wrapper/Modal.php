@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace T3SBS\T3sbootstrap\Wrapper;
@@ -38,13 +39,15 @@ class Modal implements SingletonInterface
 		}
 		if ($processedData['data']['header_position']) {
 			$headerPosition = $processedData['data']['header_position'];
-			if ( $headerPosition == 'left' ) $headerPosition = 'start';
-			if ( $headerPosition == 'right' ) $headerPosition = 'end';
+			if ( $headerPosition === 'left' ) $headerPosition = 'start';
+			if ( $headerPosition === 'right' ) $headerPosition = 'end';
 			$processedData['class'] .= ' text-'.$headerPosition;
 		}
 		if (!empty($flexconf['whiteclosebutton'])) {
 			$processedData['modal']['whiteclosebutton'] = TRUE;
 		}
+		$processedData['modal']['nextModal'] = !empty($flexconf['nextModal']) ? $flexconf['nextModal'] : '0';
+		$processedData['modal']['prevModal'] = !empty($flexconf['prevModal']) ? $flexconf['prevModal'] : '0';
 
 		return $processedData;
 	}

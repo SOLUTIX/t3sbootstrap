@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace T3SBS\T3sbootstrap\Helper;
 
 use TYPO3\CMS\Core\SingletonInterface;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 
 /*
  * This file is part of the TYPO3 extension t3sbootstrap.
@@ -23,19 +22,19 @@ class ClassHelper implements SingletonInterface
     {
         // class
         if (!empty($cTypeClass)) {
-            $class = 'fsc-default ce-'. $data['CType'];
+            $class = 'fsc-default ce-'. $data['CType'] .' ';
         } else {
             $class = '';
         }
         // Spacing: padding
         if (!empty($data['tx_t3sbootstrap_padding_sides'])) {
             // on all 4 sides of the element
-            if ($data['tx_t3sbootstrap_padding_sides'] == 'blank') {
+            if ($data['tx_t3sbootstrap_padding_sides'] === 'blank') {
                 $class .= ' p-'.$data['tx_t3sbootstrap_padding_size'];
             } else {
-                if ($data['tx_t3sbootstrap_padding_sides'] == 'l') {
+                if ($data['tx_t3sbootstrap_padding_sides'] === 'l') {
                     $paddingSide = 's';
-                } elseif ($data['tx_t3sbootstrap_padding_sides'] == 'r') {
+                } elseif ($data['tx_t3sbootstrap_padding_sides'] === 'r') {
                     $paddingSide = 'e';
                 } else {
                     $paddingSide = $data['tx_t3sbootstrap_padding_sides'];
@@ -46,12 +45,12 @@ class ClassHelper implements SingletonInterface
         // Spacing: margin
         if (!empty($data['tx_t3sbootstrap_margin_sides'])) {
             // on all 4 sides of the element
-            if ($data['tx_t3sbootstrap_margin_sides'] == 'blank') {
+            if ($data['tx_t3sbootstrap_margin_sides'] === 'blank') {
                 $class .= ' m-'.$data['tx_t3sbootstrap_margin_size'];
             } else {
-                if ($data['tx_t3sbootstrap_margin_sides'] == 'l') {
+                if ($data['tx_t3sbootstrap_margin_sides'] === 'l') {
                     $marginSide = 's';
-                } elseif ($data['tx_t3sbootstrap_margin_sides'] == 'r') {
+                } elseif ($data['tx_t3sbootstrap_margin_sides'] === 'r') {
                     $marginSide = 'e';
                 } else {
                     $marginSide = $data['tx_t3sbootstrap_margin_sides'];
@@ -62,36 +61,19 @@ class ClassHelper implements SingletonInterface
 
         // Layout
         if (!empty($data['layout'])) {
-            $pagesTSconfig = self::getFrontendController()->getPagesTSconfig();
-            $layout = $data['layout'];
-            $layoutAddItems = '';
-            $layoutClasses = '';
-            $layoutAltLabels = '';
-
-            if (!empty($pagesTSconfig['TCEFORM.']['tt_content.']['layout.']['addItems.'])) {
-                $layoutAddItems = $pagesTSconfig['TCEFORM.']['tt_content.']['layout.']['addItems.'];
-            }
-            if (!empty($pagesTSconfig['TCEFORM.']['tt_content.']['layout.']['classes.'])) {
-                $layoutClasses = $pagesTSconfig['TCEFORM.']['tt_content.']['layout.']['classes.'];
-            }
-            if (!empty($pagesTSconfig['TCEFORM.']['tt_content.']['layout.']['altLabels.'])) {
-                $layoutAltLabels = $pagesTSconfig['TCEFORM.']['tt_content.']['layout.']['altLabels.'];
-            }
-
-            if (!empty($layoutAddItems) && $layoutAddItems === $layout) {
-                $class .= ' layout-'.$layout;
-            } elseif (isset($layoutAltLabels) && !empty($layoutAltLabels[$layout])) {
-                if (isset($layoutClasses) && $layoutClasses[$layout]) {
-                    $class .= ' '.strtolower($layoutClasses[$layout]);
-                } else {
-                    $class .= ' layout-'.str_replace(' ', '-', strtolower($layoutAltLabels[$layout]));
-                }
-            } else {
-                $class .= ' layout-'.$layout;
-            }
+			$request = $GLOBALS['TYPO3_REQUEST'];
+			$site = $request->getAttribute('site');
+			# $this->rootPageId = $site->getRootPageId();
+			$pageTs = BackendUtility::getPagesTSconfig($site->getRootPageId());
+			if (!empty($pageTs['TCEFORM.']['tt_content.']['layout.']['classes.'][$data['layout']])) {
+	            $class .= ' '.$pageTs['TCEFORM.']['tt_content.']['layout.']['classes.'][$data['layout']];
+			} else {
+				$class .= ' layout-'.$data['layout'];
+			}
         }
+
         // Frame class
-        if ($data['frame_class'] != 'default') {
+        if ($data['frame_class'] !== 'default') {
             $class .= ' frame-'.$data['frame_class'];
         }
 
@@ -103,7 +85,7 @@ class ClassHelper implements SingletonInterface
         }
 
         //Flip Card
-        if ($data['CType'] == 't3sbs_card' && !empty($flexconf['flipcard'])) {
+        if ($data['CType'] === 't3sbs_card' && !empty($flexconf['flipcard'])) {
             if ($data['tx_t3sbootstrap_contextcolor']) {
                 $data['tx_t3sbootstrap_contextcolor'] = '';
             }
@@ -118,7 +100,7 @@ class ClassHelper implements SingletonInterface
         $class .= $data['tx_t3sbootstrap_extra_class'] ? ' '.$data['tx_t3sbootstrap_extra_class'] : '';
         // Border
         if (!empty($flexconf['border'])) {
-            if ($flexconf['border'] == 'border') {
+            if ($flexconf['border'] === 'border') {
                 $border = 'border';
             } else {
                 $border = 'border '.$flexconf['border'];
@@ -161,7 +143,7 @@ class ClassHelper implements SingletonInterface
         /**
          * Background Wrapper
          */
-        if ($data['CType'] == 'background_wrapper' && $isVideo == false) {
+        if ($data['CType'] === 'background_wrapper' && $isVideo == false) {
             $class .= !empty($flexconf['bgAttachmentFixed']) ? ' background-fixed' : '';
             if ((!$data['assets'] && !empty($flexconf['imageRaster'])) || (!empty($flexconf['origImage']) && !empty($flexconf['imageRaster']))) {
                 $class .= ' bg-raster';
@@ -171,12 +153,12 @@ class ClassHelper implements SingletonInterface
         /**
          * Auto-layout row/column
          */
-        if ($data['CType'] == 'autoLayout_row') {
-            if (!empty($flexconf['horizontalGutters']) && $flexconf['horizontalGutters'] != 'gx-4') {
+        if ($data['CType'] === 'autoLayout_row') {
+            if (!empty($flexconf['horizontalGutters']) && $flexconf['horizontalGutters'] !== 'gx-4') {
                 $class .= $flexconf['horizontalGutters'] ? ' '.$flexconf['horizontalGutters'] : '';
             }
             if (!empty($flexconf['verticalGutters'])) {
-                if ($flexconf['verticalGutters'] == 'gy-0') {
+                if ($flexconf['verticalGutters'] === 'gy-0') {
                     $flexconf['verticalGutters'] = 0;
                 }
                 $class .= !empty($flexconf['verticalGutters']) ? ' '.$flexconf['verticalGutters'] : '';
@@ -193,7 +175,7 @@ class ClassHelper implements SingletonInterface
         /**
          * Container
          */
-        if ($data['CType'] == 'container') {
+        if ($data['CType'] === 'container') {
             if (!empty($flexconf['flexContainer'])) {
                 if (!empty($flexconf['responsiveVariations'])) {
                     $class .= !empty($flexconf['flexContainer']) ? ' d-'.$flexconf['responsiveVariations'].'-'.$flexconf['flexContainer'] : '';
@@ -223,10 +205,10 @@ class ClassHelper implements SingletonInterface
     public function getHeaderClass(array $data): array
     {
         $headerPosition = $data['header_position'];
-        if ($headerPosition == 'left') {
+        if ($headerPosition === 'left') {
             $headerPosition = 'start';
         }
-        if ($headerPosition == 'right') {
+        if ($headerPosition === 'right') {
             $headerPosition = 'end';
         }
         $header['class'] = $headerPosition ? 'text-'.$headerPosition : '';
@@ -255,7 +237,7 @@ class ClassHelper implements SingletonInterface
         $header['class'] .= $data['tx_t3sbootstrap_header_class'] ? ' '.$data['tx_t3sbootstrap_header_class'] : '';
         $header['hClass'] .= $data['tx_t3sbootstrap_header_display'] ? ' '.$data['tx_t3sbootstrap_header_display'] : '';
 
-        if ($data['CType'] == 't3sbs_mediaobject') {
+        if ($data['CType'] === 't3sbs_mediaobject') {
             $header['hClass'] .= ' mt-0';
         }
 
@@ -264,8 +246,9 @@ class ClassHelper implements SingletonInterface
             $header['hClass'] = '';
         }
 
-        if ($data['tx_t3sbootstrap_header_fontawesome']) {
-            $header['hFa'] = '<i class="me-1 '.trim($data['tx_t3sbootstrap_header_fontawesome']).'"></i> ';
+        if (!empty($data['header_icon'])) {
+			$header['hFa'] = $data['header_icon'];
+
         }
 
         return $header;
@@ -289,11 +272,11 @@ class ClassHelper implements SingletonInterface
                 break;
                  case 'variable':
 
-                 if ($flexconf['xsColumns'] == 'equal'
-                    || $flexconf['smColumns'] == 'equal'
-                    || $flexconf['mdColumns'] == 'equal'
-                    || $flexconf['lgColumns'] == 'equal'
-                    || $flexconf['xlColumns'] == 'equal') {
+                 if ($flexconf['xsColumns'] === 'equal'
+                    || $flexconf['smColumns'] === 'equal'
+                    || $flexconf['mdColumns'] === 'equal'
+                    || $flexconf['lgColumns'] === 'equal'
+                    || $flexconf['xlColumns'] === 'equal') {
                      $class .= !empty($flexconf['xsColumns']) ? ' col-xs' : '';
                      $class .= !empty($flexconf['smColumns']) ? ' col-sm' : '';
                      $class .= !empty($flexconf['mdColumns']) ? ' col-md' : '';
@@ -336,12 +319,4 @@ class ClassHelper implements SingletonInterface
         return $class;
     }
 
-
-    /**
-     * Returns the frontend controller
-     */
-    protected function getFrontendController(): TypoScriptFrontendController
-    {
-        return $GLOBALS['TSFE'];
-    }
 }

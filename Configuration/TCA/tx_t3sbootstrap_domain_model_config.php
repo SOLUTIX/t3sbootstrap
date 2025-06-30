@@ -372,18 +372,6 @@ return [
                 'type' => 'input'
             ]
         ],
-        'fa_link_icons' => [
-            'exclude' => false,
-            'label' => 'FA icons for RTE-Links',
-            'accordion_id' => 1,
-            'accordion_sub' => '1-7',
-            'config' => [
-                'type' => 'check',
-                'items' => [
-                    ['label' => 'loads the required CSS-style for links set in the RTE or used global if activated',],
-                ]
-            ]
-        ],
         'card_flipper_on_Click' => [
             'exclude' => false,
             'label' => 'Card Flipper',
@@ -960,11 +948,11 @@ return [
                 'type' => 'select',
                 'renderType' => 'selectSingle',
                 'items' => [
-                    ['label' => 'Small (<= 576px) [sm]', 'value' => 'sm',],
-                    ['label' => 'Medium (<= 768px [md]', 'value' => 'md',],
-                    ['label' => 'Large (<= 992px) [lg]', 'value' => 'lg',],
-                    ['label' => 'Extra large (<= 1400px) [xl]', 'value' => 'xl',],
-                    ['label' => 'Extra extra large (> 1400px) [xxl]', 'value' => 'xxl',],
+                    ['label' => 'Small (≥576px) [sm]', 'value' => 'sm',],
+                    ['label' => 'Medium (≥768px [md]', 'value' => 'md',],
+                    ['label' => 'Large (≥992px) [lg]', 'value' => 'lg',],
+                    ['label' => 'Extra large (≥1200px) [xl]', 'value' => 'xl',],
+                    ['label' => 'Extra extra large (≥1400px) [xxl]', 'value' => 'xxl',],
                     ['label' => 'Never expand [no]', 'value' => 'no',],
                 ]
             ]
@@ -1048,7 +1036,7 @@ return [
             'exclude' => false,
             'label' => 'Background image ratio',
             'accordion_id' => 4,
-            'info' => 'Only to be used with a background image - not with videos.',
+            'info' => 'Only to be used with a background image - not with videos or "Full height section".',
             'config' => [
                 'type' => 'select',
                 'renderType' => 'selectSingle',

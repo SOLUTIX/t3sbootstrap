@@ -1,14 +1,14 @@
 <html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
 	  xmlns:n="http://typo3.org/ns/GeorgRinger/News/ViewHelpers"
-	  xmlns:t3sb="http://typo3.org/ns/T3SBS/T3sbootstrap/ViewHelpers"
 	  data-namespace-typo3-fluid="true">
+
 	<f:if condition="{news}">
 		<f:then>
 			<!--TYPO3SEARCH_end-->
 			<f:switch expression="{settings.templateLayout}">
 				<!-- t3sbootstrap Templates	-->
 				<f:case value="71">
-					<f:render section="ListGroup" arguments="{_all}" />
+					<f:render section="HorizontalCards" arguments="{_all}" />
 				</f:case>
 				<f:case value="72">
 					<f:render section="Cards" arguments="{_all}" />
@@ -52,12 +52,12 @@
 
 
 
-<f:section name="ListGroup">
+<f:section name="HorizontalCards">
 <div class="list-group news-list-view{contentObjectData.class}" id="news-container-{contentObjectData.uid}"{contentObjectData.styleAttr -> f:format.raw()}>
 	<f:if condition="{settings.hidePagination}">
 		<f:then>
 			<f:for each="{news}" as="newsItem" iteration="iterator">
-				<f:render partial="List/ListGroup" arguments="{newsItem: newsItem,iterator:iterator}" />
+				<f:render partial="List/HorizontalCards" arguments="{newsItem: newsItem,iterator:iterator}" />
 			</f:for>
 		</f:then>
 		<f:else>
@@ -65,7 +65,7 @@
 				<f:render partial="List/Pagination" arguments="{pagination: pagination.pagination, paginator: pagination.paginator}" />
 			</f:if>								   
 			<f:for each="{pagination.paginator.paginatedItems}" as="newsItem" iteration="iterator">
-				<f:render partial="List/ListGroup" arguments="{newsItem: newsItem,iterator:iterator}" />
+				<f:render partial="List/HorizontalCards" arguments="{newsItem: newsItem,iterator:iterator}" />
 			</f:for>
 			<f:if condition="{settings.list.paginate.insertBelow}">
 				<f:render partial="List/Pagination" arguments="{pagination: pagination.pagination, paginator: pagination.paginator}" />

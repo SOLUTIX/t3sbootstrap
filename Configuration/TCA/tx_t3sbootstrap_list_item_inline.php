@@ -7,13 +7,16 @@ return [
 		'tstamp' => 'tstamp',
 		'crdate' => 'crdate',
 		'enablecolumns' => [],
-		'enablecolumns' => [],
 		'hideTable' => 1,
 		'searchFields' => '',
 		'iconfile' => 'EXT:t3sbootstrap/Resources/Public/Icons/tx_t3sbootstrap_domain_model_config.gif',
-        'security' => [
-            'ignorePageTypeRestriction' => true,
-        ],
+		'security' => [
+			'ignorePageTypeRestriction' => true,
+		],
+		'transOrigPointerField' => 'l10n_parent',
+		'transOrigDiffSourceField' => 'l10n_diffsource',
+		'languageField' => 'sys_language_uid',
+		'translationSource' => 'l10n_source',
 	],
 
 	'columns' => [

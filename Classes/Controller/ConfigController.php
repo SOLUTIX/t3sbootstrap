@@ -5,11 +5,9 @@ declare(strict_types=1);
 namespace T3SBS\T3sbootstrap\Controller;
 
 use Psr\Http\Message\ResponseInterface;
-use T3SBS\T3sbootstrap\Domain\Repository\ConfigRepository;
 use T3SBS\T3sbootstrap\Domain\Model\Config;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Backend\Attribute\Controller;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
@@ -17,7 +15,6 @@ use TYPO3\CMS\Core\Messaging\FlashMessageQueue;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\RootlineUtility;
-use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Extbase\Service\CacheService;
 
 /*
@@ -44,21 +41,23 @@ final class ConfigController extends AbstractController
     /**
      * action list
      */
-    public function listAction(bool $deleted = false, bool $created = false, bool $updateSss = false): ResponseInterface
+    public function listAction(
+        bool $deleted = false,
+        bool $created = false,
+        bool $updateSss = false
+    ): ResponseInterface
     {
-        if (empty($this->settings['sitepackage'])) {
-            $baseDir = GeneralUtility::getFileAbsFileName('fileadmin/T3SB/');
-        } else {
-            if (ExtensionManagementUtility::isLoaded('t3sb_package')) {
-                $baseDir = GeneralUtility::getFileAbsFileName('EXT:t3sb_package/');
-            }
-        }
         $cdnHint = false;
-        $file = $baseDir.'Resources/Public/Contrib/Bootstrap/scss/bootstrap.scss';
+        $file = $this->baseDir.'Resources/Public/Contrib/Bootstrap/scss/bootstrap.scss';
         if (file_exists($file) && $this->settings['cdn']['enable']) {
             $cdnHint = true;
         }
 
+        $assignedOptions['idNull'] = FALSE;
+        if ($this->request->getQueryParams()['id'] === '0') {
+            $assignedOptions['idNull'] = TRUE;
+        }
+    
         if ($this->isSiteroot && $this->rootPageId) {
             $pidList = parent::getTreeList($this->rootPageId, 999999, 0, '1');
             $allConfig = [];
@@ -80,15 +79,15 @@ final class ConfigController extends AbstractController
             $assignedOptions['rootTemplate'] = false;
         }
         $assignedOptions['rootConfig'] = $this->rootConfig ? true : false;
-        $assignedOptions['config'] = $this->configRepository->findOneByPid($this->currentUid);
+        $assignedOptions['config'] = $this->configRepository->findOneBy(['pid' => $this->currentUid]);
         $assignedOptions['admin'] = $this->isAdmin;
         $assignedOptions['customScss'] = false;
-        $assignedOptions['scss'] = '';
         $assignedOptions['action'] = 'list';
         $assignedOptions['updateScss'] = $updateSss;
         $assignedOptions['deleted'] = $deleted;
         $assignedOptions['created'] = $created;
         $assignedOptions['cdnHint'] = $cdnHint;
+		$assignedOptions['settings'] = $this->settings;
 
         if (!empty($this->settings['customScss']) && (int)$this->settings['customScss'] === 1) {
             $customScss = parent::getCustomScss('custom-variables');
@@ -109,26 +108,21 @@ final class ConfigController extends AbstractController
             }
         }
 
-        $assignedOptions['webpIsLoaded'] = false;
-        if (ExtensionManagementUtility::isLoaded('webp')) {
-            $assignedOptions['webpIsLoaded'] = true;
-        }
-
         $new_raster = GeneralUtility::getFileAbsFileName('fileadmin/T3SB/Resources/Public/Images/raster.png');
         if ( !file_exists($new_raster) ) {
             $folder = GeneralUtility::getFileAbsFileName('fileadmin/T3SB/Resources/Public/Images/');
             if (!is_dir($folder)) {
-                mkdir($folder, 0777, true);
+                if (!mkdir($folder, 0777, true) && !is_dir($folder)) {
+                    throw new \RuntimeException(sprintf('Directory "%s" was not created', $folder));
+                }
             }
             $orig_raster = GeneralUtility::getFileAbsFileName('EXT:t3sbootstrap/Resources/Public/Images/raster.png');
             copy($orig_raster, $new_raster);
         }
 
-        $this->view->assignMultiple($assignedOptions);
         $moduleTemplate = $this->moduleTemplateFactory->create($this->request);
         $moduleTemplate->assignMultiple($assignedOptions);
-        $moduleTemplate->setContent($this->view->render());
-        return $this->htmlResponse($moduleTemplate->renderContent());
+        return $moduleTemplate->renderResponse('Config/List');
     }
 
 
@@ -140,6 +134,7 @@ final class ConfigController extends AbstractController
         $assignedOptions = parent::getFieldsOptions();
         $assignedOptions['pid'] = $this->currentUid;
         $assignedOptions['tcaColumns'] = parent::getTcaColumns();
+        $assignedOptions['admin'] = $this->isAdmin;
 
         if ($this->rootConfig) {
             // config from rootline
@@ -150,7 +145,7 @@ final class ConfigController extends AbstractController
                     unset($rootLineArray[count($rootLineArray)-1]);
                 }
                 foreach ($rootLineArray as $rootline) {
-                    $rootlineConfig = $this->configRepository->findOneByPid((int)$rootline['uid']);
+                    $rootlineConfig = $this->configRepository->findOneBy(['pid' => (int)$rootline['uid']]);
                     if (!empty($rootlineConfig)) {
                         break;
                     }
@@ -161,30 +156,28 @@ final class ConfigController extends AbstractController
                 $assignedOptions['newConfig'] = parent::getNewConfig($this->rootConfig);
             }
         } else {
-            $newConfig = new Config();
-            // some defaults
-            $newConfig = parent::setDefaults($newConfig);
-            $assignedOptions['newConfig'] = $newConfig;
+			return $this->redirect('create');
         }
 
-        $this->view->assignMultiple($assignedOptions);
-        $moduleTemplate = $this->moduleTemplateFactory->create($this->request);
-        $moduleTemplate->setContent($this->view->render());
-        return $this->htmlResponse($moduleTemplate->renderContent());
+		return $this->redirect('list', null, null, ['created' => true]);
     }
 
 
     /**
      * action create
      */
-    public function createAction(Config $newConfig): ResponseInterface
+    public function createAction(Config $newConfig = null): ResponseInterface
     {
+		if (empty($newConfig)) {
+            $newConfig = new Config();
+		}
         $newConfig->setHomepageUid($this->rootPageId);
         $newConfig->setPid($this->currentUid);
+        $newConfig = parent::setDefaults($newConfig);
         $this->configRepository->add($newConfig);
         parent::setDefaultBackendLayout();
         parent::writeConstants();
-        return $this->redirect('list', null, null, array('created' => true));
+        return $this->redirect('list', null, null, ['created' => true]);
     }
 
 
@@ -201,6 +194,7 @@ final class ConfigController extends AbstractController
         $assignedOptions['updated'] = $updated;
         $assignedOptions['override'] = parent::overrideConfig();
         $assignedOptions['tcaColumns'] = parent::getTcaColumns();
+		$assignedOptions['settings'] = $this->settings;
         $assignedOptions['action'] = 'edit';
         if (!$this->isSiteroot) {
             $assignedOptions['compare'] = parent::compareConfig($config);
@@ -218,10 +212,9 @@ final class ConfigController extends AbstractController
             $notificationQueue->enqueue($flashMessage);
         }
 
-        $this->view->assignMultiple($assignedOptions);
         $moduleTemplate = $this->moduleTemplateFactory->create($this->request);
-        $moduleTemplate->setContent($this->view->render());
-        return $this->htmlResponse($moduleTemplate->renderContent());
+        $moduleTemplate->assignMultiple($assignedOptions);
+        return $moduleTemplate->renderResponse('Config/Edit');
     }
 
 
@@ -232,13 +225,14 @@ final class ConfigController extends AbstractController
     {
         $config->setHomepageUid($this->rootPageId);
         $this->configRepository->update($config);
+		$this->persistenceManager->persistAll();
         parent::writeConstants();
 		if (!empty($this->settings['clearPageCache'])) {
 	        $cacheService = GeneralUtility::makeInstance(CacheService::class);
-	        $cacheService->clearPageCache();			
+	        $cacheService->clearPageCache();
 		}
 
-        return $this->redirect('edit', null, null, array('config' => $config, 'updated' => true));
+        return $this->redirect('edit', null, null, ['config' => $config, 'updated' => true]);
     }
 
 
@@ -265,11 +259,11 @@ final class ConfigController extends AbstractController
         $assignedOptions['action'] = 'dashboard';
         $assignedOptions['isSiteroot'] = $this->isSiteroot;
         $assignedOptions['admin'] = $this->isAdmin;
+		$assignedOptions['settings'] = $this->settings;
 
-        $this->view->assignMultiple($assignedOptions);
         $moduleTemplate = $this->moduleTemplateFactory->create($this->request);
-        $moduleTemplate->setContent($this->view->render());
-        return $this->htmlResponse($moduleTemplate->renderContent());
+        $moduleTemplate->assignMultiple($assignedOptions);
+        return $moduleTemplate->renderResponse('Config/Dashboard');
     }
 
 
@@ -278,16 +272,8 @@ final class ConfigController extends AbstractController
      */
     public function constantsAction(): ResponseInterface
     {
-        if (empty($this->settings['sitepackage'])) {
-            $baseDir = GeneralUtility::getFileAbsFileName('fileadmin/T3SB/');
-        } else {
-            if (ExtensionManagementUtility::isLoaded('t3sb_package')) {
-                $baseDir = GeneralUtility::getFileAbsFileName("EXT:t3sb_package/");
-            }
-        }
-
         if ($this->isSiteroot) {
-            $constantPath = $baseDir.'Configuration/TypoScript/t3sbconstants.typoscript';
+            $constantPath = $this->baseDir.'Configuration/TypoScript/t3sbconstants.typoscript';
             if (file_exists($constantPath)) {
                 $fileGetContents = @file_get_contents($constantPath);
                 $outsourcedConstantsArr = explode('[END]', trim($fileGetContents));
@@ -307,10 +293,11 @@ final class ConfigController extends AbstractController
         $assignedOptions['action'] = 'constants';
         $assignedOptions['isSiteroot'] = $this->isSiteroot;
         $assignedOptions['admin'] = $this->isAdmin;
+		$assignedOptions['settings'] = $this->settings;
 
-        $this->view->assignMultiple($assignedOptions);
         $moduleTemplate = $this->moduleTemplateFactory->create($this->request);
-        $moduleTemplate->setContent($this->view->render());
-        return $this->htmlResponse($moduleTemplate->renderContent());
+        $moduleTemplate->assignMultiple($assignedOptions);
+        return $moduleTemplate->renderResponse('Config/Constants');
+
     }
 }

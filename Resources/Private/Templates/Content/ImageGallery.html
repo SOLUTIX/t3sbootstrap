@@ -41,7 +41,14 @@
 											<f:render section="Image" arguments="{_all}" />
 											<div class="zoom-overlay ml-2">
 												<span class="magnifying-glass-icon">
-													<i class="fa-solid fa-search-plus"></i>
+													<f:if condition="{settings.iconpack.loaded}">
+														<f:then>
+															<t3sb:icon iconfig="fa6:solid,magnifying-glass-plus" />
+														</f:then>
+														<f:else>
+															<i class="fa-solid fa-magnifying-glass-plus"></i>
+														</f:else>	
+													</f:if>
 												</span>
 											</div>
 										</ce:link.clickEnlarge>
@@ -69,9 +76,9 @@
 </html>
 
 <f:section name="Image">
-	<t3sb:media 
-		file="{file}" 
-		title="{file.title}" 
+	<t3sb:media
+		file="{file}"
+		title="{file.title}"
 		alt="{f:if(condition: file.alternative, then: '{file.alternative}', else: 'image-{file.uid}')}"
 		class="{addmedia.imgclass}{f:if(condition: file.properties.tx_t3sbootstrap_extra_imgclass, then: ' {file.properties.tx_t3sbootstrap_extra_imgclass}')}{f:if(condition: '{file.properties.tx_t3sbootstrap_lazy_load} && {settings.lazyLoad} == 2', then: ' lazy')}{f:if(condition: '{data.imageborder}',then: ' img-thumbnail')}"
 		width="{gallery.width}"
@@ -85,7 +92,7 @@
 		lazyload="{f:if(condition: '{settings.lazyLoad} == 1', then: '1', else: '0')}"
 		ratio="{data.tx_t3sbootstrap_image_ratio}"
 		columns="{data.imagecols}"
-		shift="{file.properties.tx_t3sbootstrap_shift_vertical}" 
+		shift="{file.properties.tx_t3sbootstrap_shift_vertical}"
 		hshift="{file.properties.tx_t3sbootstrap_shift_horizontal}"
 	 />
 </f:section>

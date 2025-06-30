@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace T3SBS\T3sbootstrap\DataProcessing;
@@ -65,10 +66,10 @@ class CommaSeparatedValueProcessor implements DataProcessorInterface
 				if ( str_starts_with($table[count($table)-1], 'ç') ) {
 					$tableClass = TRUE;
 					break;
-				} else {
-					$tableClass = FALSE;
 				}
-			}
+
+                $tableClass = FALSE;
+            }
 			if ($tableClass) {
 				foreach ($processedData['table'] as $tKey=>$table) {
 					foreach ($table as $key=>$row) {

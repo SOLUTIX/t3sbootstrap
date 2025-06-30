@@ -6,16 +6,12 @@ namespace T3SBS\T3sbootstrap\Wrapper;
 
 use TYPO3\CMS\Core\SingletonInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Service\FlexFormService;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Connection;
-use TYPO3\CMS\Core\Database\Query\Restriction\FrontendRestrictionContainer;
-use TYPO3\CMS\Core\Resource\FileRepository;
-use TYPO3\CMS\Core\Context\Context;
 use T3SBS\T3sbootstrap\Helper\StyleHelper;
 use T3SBS\T3sbootstrap\Utility\YouTubeRenderer;
 use T3SBS\T3sbootstrap\Utility\BackgroundImageUtility;
+use TYPO3\CMS\Core\Resource\FileRepository;
 
 /*
  * This file is part of the TYPO3 extension t3sbootstrap.
@@ -34,6 +30,7 @@ class BackgroundWrapper implements SingletonInterface
         $processedData['enableAutoheight'] = !empty($flexconf['enableAutoheight']) ? true : false;
         $processedData['addHeight'] = !empty($flexconf['addHeight']) ? (int)$flexconf['addHeight'] : 0;
         $fileRepository = GeneralUtility::makeInstance(FileRepository::class);
+
         $files = $fileRepository->findByRelation('tt_content', 'assets', (int)$processedData['data']['uid']);
         $file = !empty($files) && is_array($files) ? $files[0] : '';
         // media
@@ -67,7 +64,7 @@ class BackgroundWrapper implements SingletonInterface
                         // local video
                         $processedData['file'] = $file;
                         // align content items
-                        $processedData['alignItem'] = $flexconf['alignVideoItem'] != 'none' ? ' '.$flexconf['alignVideoItem'] : '';
+                        $processedData['alignItem'] = $flexconf['alignVideoItem'] !== 'none' ? ' '.$flexconf['alignVideoItem'] : '';
                         // video shift
                         $processedData['shift'] = $flexconf['shift'];
                         $processedData['horizontalShift'] = !empty($flexconf['horizontalShift']) ? $flexconf['horizontalShift'] : 0;
@@ -87,12 +84,13 @@ class BackgroundWrapper implements SingletonInterface
                         $loop = $flexconf['loop'];
                         $mute = $autoplay ? true : $flexconf['mute'];
                         $processedData['localVideo']['inlineCSS'] = '';
-                        $mobileHeight = $flexconf['mobileHeight'] != 'none' ? (int) trim($flexconf['mobileHeight']) : '';
-                        $mobileWidth = $flexconf['mobileWidth'] != 'none' ? (int) trim($flexconf['mobileWidth']) : '';
+                        $mobileHeight = $flexconf['mobileHeight'] !== 'none' ? (int) trim($flexconf['mobileHeight']) : '';
+                        $mobileWidth = $flexconf['mobileWidth'] !== 'none' ? (int) trim($flexconf['mobileWidth']) : '';
                         // max-width:575px
                         $processedData['localVideo']['inlineCSS'] = '@media (max-width:768px){#s-'.$processedData['data']['uid'].
                         ' figure.video{width:'.$mobileWidth.'%; max-height:'.$mobileHeight.'px; margin-left:'.$processedData['horizontalShift'].'%}}';
-                        $ratio = end(explode('/', $flexconf['aspectRatio'])).'x9';
+                        $rArray = explode('/', $flexconf['aspectRatio']);
+                        $ratio = end($rArray).'x9';
                         $ratioArr = explode('x', $ratio);
                         $x = $ratio;
                         $y = $ratioArr[1].' / '.$ratioArr[0].' * 100%';
@@ -113,7 +111,7 @@ class BackgroundWrapper implements SingletonInterface
                     $processedData['ingWidth'] = !empty($flexconf['width']) ? $flexconf['width'] : 1296;
                 } else {
                     $bgImage = GeneralUtility::makeInstance(BackgroundImageUtility::class)
-                        ->getBgImage($processedData['data']['uid'], 'tt_content', false, true, $flexconf, false, 0, $bgMediaQueries);
+                        ->getBgImage($processedData['data']['uid'], 'tt_content', false, true, $flexconf, false, 0, $bgMediaQueries, $files);
                     $processedData['bgImage'] = $bgImage;
                     if (!empty($flexconf['paddingTopBottom'])) {
                         $processedData['style'] .= ' padding: '.$flexconf['paddingTopBottom'].'rem 0;';

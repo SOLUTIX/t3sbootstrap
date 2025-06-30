@@ -1,5 +1,4 @@
-<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
-	xmlns:t3sb="http://typo3.org/ns/T3SBS/T3sbootstrap/ViewHelpers" data-namespace-typo3-fluid="true">
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" data-namespace-typo3-fluid="true">
 <f:comment>For assets used on more than one page</f:comment>
 <f:if condition="{carousel}">
 <f:comment>CardWrapper.html, CarouselContainer.html, Jumbotron.html</f:comment>
@@ -17,8 +16,9 @@
 <f:if condition="{fixedbutton}">
 	<f:asset.script identifier="fixedbutton_function">
 // Fixed button on left or right browser edge - Page/Assets.html
-function t3sbFixedButtons(fixedButtons, visiblePart, btnSlideOutCorrection, isBtnGroup) {  
+function t3sbFixedButtons(fixedButtons, visiblePart, btnSlideOutCorrection, isBtnGroup) {
 	fixedButtons.forEach( fixedButton => {
+
 		if (fixedButton !== null && fixedButton !== '') {
 			fixedButton.style.opacity = '0';
 			fixedButton.classList.remove('d-none');
@@ -47,13 +47,13 @@ function t3sbFixedButtons(fixedButtons, visiblePart, btnSlideOutCorrection, isBt
 					if (slideInButtons !== null && slideInButtons !== '') {
 						var slideIn = 0,
 							slideOut = 0,
-							boxWidth = fixedButton.clientWidth,
+							boxWidth = fixedButton.clientWidth + btnSlideOutCorrection,
 							boxHalfHeight = fixedButton.clientHeight / 2;
 						if (isBtnGroup) {
 							Array.from(slideInButtons.children).forEach( slideInButton => {
 								if ( typeof slideInButton.firstChild !== 'undefined' ) {
 									slideIn = boxWidth - visiblePart;
-									var	icon = slideInButton.querySelector('i');
+									var	icon = slideInButton.querySelector('.fixedPosition svg.iconpack')
 									icon.classList.add('me-2');
 									slideInButton.style.width = 'auto';
 									slideInButton.style.right = '-'+slideIn+'px';
@@ -123,7 +123,7 @@ function t3sbFadeInEffect(fadeTarget) {
 	// Fixed button on left or right browser edge - Page/Assets.html
 	var buttonsFixedPosition = document.querySelectorAll('.fixedPosition');
 	if ( buttonsFixedPosition.length ) {
-		t3sbFixedButtons(buttonsFixedPosition, 0, 0, false);		
+		t3sbFixedButtons(buttonsFixedPosition, 0, 0, false);
 	}
 	</f:asset.script>
 		</f:else>
@@ -131,26 +131,36 @@ function t3sbFadeInEffect(fadeTarget) {
 </f:if>
 
 <f:if condition="{scrollspy}">
+	<f:variable name="navbarBreakpointWidth">
+		{f:if(condition: settings.config.navbarBreakpointWidth, then: ' {settings.config.navbarBreakpointWidth}', else: 'null')}
+	</f:variable>
 	<f:comment>Page/Section.html, Page/MenuSection.html</f:comment>
 	<f:asset.script identifier="vanilla_scrollspy">
 	// Sectionmenu scrollspy - Page/Assets.html
 	const sectionmenu = document.getElementById('sectionmenu');
-	var sidebarSectionMobile = {settings.config.sidebarSectionMobile};
-	var sidebarSectionMobile2222 = {settings.config.sidebarSectionMobile};
-	if ( !sidebarSectionMobile && window.innerWidth < {settings.config.navbarBreakpointWidth} ) {
-		sectionmenu.parentNode.removeChild(sectionmenu);
-	} else {
-		document.body.setAttribute('data-bs-spy', 'scroll');
-		document.body.setAttribute('data-bs-target', '#sectionmenu');
-		document.body.setAttribute('data-bs-smooth-scroll', 'true');
-		document.body.setAttribute('data-bs-root-margin', '{settings.config.sectionmenuScrollspyRootMargin}');
-		document.body.setAttribute('data-bs-threshold', '[{settings.config.sectionmenuScrollspyThreshold}]');
-		document.body.setAttribute('tabindex', '0');
-		sectionmenu.querySelectorAll('a').forEach( link => {
-			link.addEventListener('click', function(l) {
-				t3sbScrollToAnchor({settings.config.sectionmenuAnchorOffset as integer}, fixedNavbar, navbarHeight, l.currentTarget.getAttribute('href'));
+	if (sectionmenu != null) {
+		var sidebarSectionMobile = {settings.config.sidebarSectionMobile};
+		if ({navbarBreakpointWidth} != null) {
+			var breakpointWidth = {navbarBreakpointWidth};
+		} else {
+			var breakpointWidth = 768;
+		}
+		if ( !sidebarSectionMobile && window.innerWidth < breakpointWidth ) {
+			sectionmenu.parentNode.removeChild(sectionmenu);
+		} else {
+			document.body.setAttribute('data-bs-spy', 'scroll');
+			document.body.setAttribute('data-bs-target', '#sectionmenu');
+			document.body.setAttribute('data-bs-smooth-scroll', 'true');
+			document.body.setAttribute('data-bs-root-margin', '{settings.config.sectionmenuScrollspyRootMargin}');
+			document.body.setAttribute('data-bs-threshold', '[{settings.config.sectionmenuScrollspyThreshold}]');
+			document.body.setAttribute('tabindex', '0');
+
+			sectionmenu.querySelectorAll('a').forEach( link => {
+				link.addEventListener('click', function(l) {
+					t3sbScrollToAnchor({settings.config.sectionmenuAnchorOffset as integer}, fixedNavbar, navbarHeight, l.currentTarget.getAttribute('href'));
+				});
 			});
-		});
+		}
 	}
 	</f:asset.script>
 </f:if>

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace T3SBS\T3sbootstrap\Components;
@@ -20,9 +21,8 @@ class Mediaobject implements SingletonInterface
 	public function getProcessedData(array $processedData, array $flexconf): array
 	{
 
-		$processedData['mediaobject']['order'] = $flexconf['order'] == 'right' ? 'right' : 'left';
-		$processedData['mediaObjectBody'] = $flexconf['order'] == 'right' ? ' me-3 m-1' : ' ms-3 m-1';
-
+		$processedData['mediaobject']['order'] = $flexconf['order'] === 'right' ? 'right' : 'left';
+		$processedData['mediaObjectBody'] = $flexconf['order'] === 'right' ? ' me-3 m-1' : ' ms-3 m-1';
 		$processedData['addmedia']['figureclass'] = '';
 
 		switch ( $processedData['data']['imageorient'] ) {

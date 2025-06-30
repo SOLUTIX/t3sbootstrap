@@ -8,10 +8,7 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\SingletonInterface;
-use TYPO3\CMS\Core\Service\FlexFormService;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
-use T3SBS\T3sbootstrap\Helper\FlexformHelper;
-use T3SBS\T3sbootstrap\Utility\BackgroundImageUtility;
+use TYPO3\CMS\Core\Context\Context;
 
 /*
  * This file is part of the TYPO3 extension t3sbootstrap.
@@ -26,23 +23,12 @@ class Card implements SingletonInterface
      */
     public function getProcessedData(array $processedData, array $flexconf, array $parentflexconf): array
     {
-        $flexformService = GeneralUtility::makeInstance(FlexFormService::class);
-        $flexformHelper = GeneralUtility::makeInstance(FlexformHelper::class);
-        $parentflexconf = [];
-        $parentUid = $processedData['data']['tx_container_parent'];
-        if ($parentUid) {
-            $parentFlexformData = BackendUtility::getRecord('tt_content', $parentUid, 'CType, tx_t3sbootstrap_flexform');
-            if ($parentFlexformData['tx_t3sbootstrap_flexform']) {
-                $parentflexconf = $flexformService->convertFlexFormContentToArray($parentFlexformData['tx_t3sbootstrap_flexform']);
-                $parentflexconf =$flexformHelper->addMissingElements($parentflexconf, $parentFlexformData['CType'], true);
-            }
-        }
-        $cardData = $flexconf;
 
+        $cardData = $flexconf;
         // crop max characters
         $cardData['cropMaxCharacters'] = !empty($parentflexconf['cropMaxCharacters']) ? $parentflexconf['cropMaxCharacters'] : '';
         // image position
-        if ((int)$processedData['data']['imageorient'] == 8) {
+        if ((int)$processedData['data']['imageorient'] === 8) {
             $processedData['data']['imageorient'] = 'bottom';
         } else {
             $processedData['data']['imageorient'] = 'top';
@@ -87,7 +73,7 @@ class Card implements SingletonInterface
                 # card-img-overlay for mobile < 576 by JS and class overlay
                 $cardData['mobile']['overlay'] = 'img-overlay';
             }
-            if ($processedData['data']['imageorient'] == 'top') {
+            if ($processedData['data']['imageorient'] === 'top') {
                 if (!empty($cardData['title']['onTop']) || !empty($processedData['data']['tx_t3sbootstrap_cardheader'])) {
                     $cardData['image']['class'] = 'img-fluid';
                 } else {
@@ -130,16 +116,24 @@ class Card implements SingletonInterface
         } else {
             $cardClass .= $processedData['data']['tx_t3sbootstrap_header_position'] ? ' '.$processedData['data']['tx_t3sbootstrap_header_position'] : '';
         }
+
         // list group
         $cardData['list'] = [];
         if (!empty($processedData['data']['tx_t3sbootstrap_list_item'])) {
+            $languageAspect = GeneralUtility::makeInstance(Context::class)->getAspect('language');
+            $sysLanguageUid = $languageAspect->getContentId() ?: 0;
+            $parentid = $processedData['data']['uid'];
+            if ( !empty($sysLanguageUid) && !empty($processedData['data']['_LOCALIZED_UID']) ) {
+                $parentid = $processedData['data']['_LOCALIZED_UID'];
+            } 
             $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
             $queryBuilder = $connectionPool->getQueryBuilderForTable('tx_t3sbootstrap_list_item_inline');
             $listGroup = $queryBuilder
                     ->select('listitem')
                     ->from('tx_t3sbootstrap_list_item_inline')
                     ->where(
-                        $queryBuilder->expr()->eq('parentid', $queryBuilder->createNamedParameter($processedData['data']['uid'], Connection::PARAM_INT))
+                        $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter($sysLanguageUid, Connection::PARAM_INT)),
+                        $queryBuilder->expr()->eq('parentid', $queryBuilder->createNamedParameter($parentid, Connection::PARAM_INT))
                     )
                     ->executeQuery()
                     ->fetchAllAssociative();
@@ -159,34 +153,23 @@ class Card implements SingletonInterface
             $cardData['multiImage']['border'] = $flexconf['multiImage']['borderWidth'].$borderColor.$shadow;
             $cardData['multiImage']['slope'] =	$flexconf['multiImage']['diagonal'] ? $flexconf['multiImage']['slope'] : 0;
             $cardData['multiImage']['socialmedia']['enable'] = $flexconf['multiImage']['socialmedia']['enable'];
-            $cardData['multiImage']['socialmedia']['footer'] = $flexconf['multiImage']['socialmedia']['footer'];
+            $cardData['multiImage']['socialmedia']['footer'] = !empty($flexconf['multiImage']['socialmedia']['footer']) ? $flexconf['multiImage']['socialmedia']['footer'] : '';
             if (!empty($flexconf['multiImage']['socialmedia']['enable'])) {
                 foreach ($flexconf['multiImage']['socialmedia'] as $key=>$socialmedia) {
-                    if ($key != 'enable' && $key != 'footer' &&  !empty($socialmedia)) {
+                    if ($key !== 'enable' && $key !== 'footer' &&  !empty($socialmedia)) {
                         $cardData['multiImage']['socialmediaLinks'][$key] = $socialmedia;
                     }
                 }
             }
         }
 
-        #		if ( !empty($cardData['square']['enable']) ) {
-        #			$cardClass .= ' rounded-0 border-0';
-        #		}
-
-        if (!empty($cardData['tiling']['enable'])) {
-            $cardClass = 'card tiling rounded-0 border-0'.$processedData['class'];
-            if (empty($processedData['data']['tx_t3sbootstrap_contextcolor'])) {
-                $cardClass .= ' bg-transparent';
-            }
-        }
-
         // header position
         if ($processedData['data']['header_position']) {
             $headerPosition = $processedData['data']['header_position'];
-            if ($headerPosition == 'left') {
+            if ($headerPosition === 'left') {
                 $headerPosition = 'start';
             }
-            if ($headerPosition == 'right') {
+            if ($headerPosition === 'right') {
                 $headerPosition = 'end';
             }
             $cardClass .= ' text-'.$headerPosition;
@@ -207,24 +190,6 @@ class Card implements SingletonInterface
             $cardClass .= ' h-100';
         }
 
-        if (!empty($cardData['tiling']['enable'])) {
-            $processedData['addmedia']['imgclass'] = ' rounded-0 '.$cardData['image']['class'];
-            $bgMediaQueries = '768,576';
-            $bgimages = GeneralUtility::makeInstance(BackgroundImageUtility::class)
-                ->getBgImage(
-                    $processedData['data']['uid'],
-                    'tt_content',
-                    false,
-                    false,
-                    $flexconf,
-                    false,
-                    $processedData['data']['uid'],
-                    $bgMediaQueries
-                );
-            if ($bgimages) {
-                $cardData['bgimages'] = $bgimages;
-            }
-        }
 
         $processedData['class'] = trim($cardClass);
 

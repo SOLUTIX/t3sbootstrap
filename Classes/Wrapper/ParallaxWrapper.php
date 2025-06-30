@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace T3SBS\T3sbootstrap\Wrapper;
@@ -23,9 +24,11 @@ class ParallaxWrapper implements SingletonInterface
 	 */
 	public function getProcessedData(array $processedData, array $flexconf): array
 	{
+
 		$fileRepository = GeneralUtility::makeInstance(FileRepository::class);
 		$file = $fileRepository->findByRelation('tt_content', 'assets', (int)$processedData['data']['uid'])[0];
 		$processedData['file'] = $file;
+
 		if ( $file ) {
 			if ( $file->getType() === 4 ) {
 				$processedData['video'] = TRUE;
@@ -40,26 +43,27 @@ class ParallaxWrapper implements SingletonInterface
 				} else {
 				// local video
 					$processedData['local'] = TRUE;
-					if ( $file->getMimeType() == 'video/mp4' ) {
+					if ( $file->getMimeType() === 'video/mp4' ) {
 						$processedData['mimeType'] = 'mp4' ;
 					}
-					if ( $file->getMimeType() == 'video/webm' ) {
+					if ( $file->getMimeType() === 'video/webm' ) {
 						$processedData['mimeType'] = 'webm' ;
 					}
-					if ( $file->getMimeType() == 'video/ogv' ) {
+					if ( $file->getMimeType() === 'video/ogv' ) {
 						$processedData['mimeType'] = 'ogv' ;
 					}
 					$processedData['file'] = $file;
 				}
 			} else {
+
 				$bgImage = GeneralUtility::makeInstance(BackgroundImageUtility::class)
 				 ->getBgImage($processedData['data']['uid'], 'tt_content', FALSE, FALSE, [], FALSE, 0);
 				$processedData['parallaxImage'] = $bgImage;
 			}
 
-			$processedData['width'] = $flexconf['width'];
+			$processedData['width'] = !empty($flexconf['width']) ? $flexconf['width'] : 'auto';
 			$processedData['speedFactor'] = $flexconf['speedFactor'] ?: 1;
-			$processedData['addHeight'] = (int)$flexconf['addHeight'] ?: 0;
+			$processedData['addHeight'] = !empty($flexconf['addHeight']) ? (int)$flexconf['addHeight'] : 0;
 			$processedData['no-mobile'] = $flexconf['mobile'] ? '/iPad|iPhone|iPod|Android/' : '-';
 		}
 

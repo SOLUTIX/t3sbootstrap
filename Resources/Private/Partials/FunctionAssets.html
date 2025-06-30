@@ -140,7 +140,7 @@ function t3sbSectionMenu(fixedNavbar,sectionmenuAnchorOffset,navbarHeight,offcan
 			navLinks.forEach((l) => {
 				l.addEventListener('click', () => { bsOffcanvas.toggle() });
 			});
-		} else {		
+		} else {
 			const bsCollapse = new bootstrap.Collapse(menuToggle, {toggle: false});
 			navLinks.forEach((l) => {
 				l.addEventListener('click', () => { bsCollapse.toggle() });
@@ -178,20 +178,26 @@ function t3sbTransparentNavbar(colorschemes, gradient) {
 	</f:asset.script>
 </f:if>
 
-<f:if condition="{settings.config.navbarShrinkcolor}">
+
+<f:if condition="{settings.config.navbarShrinkcolor} && {settings.config.navbarPlacement} == 'fixed-top'">
 	<f:asset.script identifier="navbarshrinkcolor_function">
 // Shrinking Navbar on scrolling - Navbar/Assets.html
 function t3sbShrinkingNavbar(navbar, padding) {
 	let navShrinkColorschemes = navbar.getAttribute('data-shrinkcolorschemes'),
 		navShrinkColor = 'navbar-'+navbar.getAttribute('data-shrinkcolor'),
 		navColorschemes = navbar.getAttribute('data-colorschemes'),
-		navColor = navbar.getAttribute('data-color'),
+		navColor = navbar.getAttribute('data-color');
+
+	let gradient = [];
+	if (navShrinkColorschemes != null) {
 		gradient = navShrinkColorschemes.split(' ');
+	}
+
 	if (gradient[1]) {
 		navShrinkColorschemes = gradient[0];
 	}
 	window.addEventListener('scroll', function() {
-		if (navColor == navShrinkColor) {	
+		if (navColor == navShrinkColor) {
 			if ( t3sbOffsetTop(navbar) > 100) {
 				navbar.classList.remove('py-'+padding, navColorschemes);
 				navbar.classList.add('navbar-shrink', navShrinkColorschemes);
@@ -206,7 +212,7 @@ function t3sbShrinkingNavbar(navbar, padding) {
 			} else {
 				navbar.classList.add('py-'+padding, navColorschemes, navColor);
 				navbar.classList.remove('navbar-shrink', navShrinkColor, navShrinkColorschemes);
-			}	
+			}
 		}
 	});
 }
@@ -270,11 +276,13 @@ function t3sbNavbarSearchbox(vw, bp) {
 		}
 		form.classList.add('mt-3');
 	} else {
-		if (form.classList.contains('xl-ms-auto')) {
-			form.classList.add('ms-auto');
-			form.classList.remove('xl-ms-auto');
+		if (form) {
+			if (form.classList.contains('xl-ms-auto')) {
+				form.classList.add('ms-auto');
+				form.classList.remove('xl-ms-auto');
+			}
+			form.classList.remove('mt-3');
 		}
-		form.classList.remove('mt-3');
 	}
 }
 	</f:asset.script>
@@ -321,18 +329,18 @@ function t3sbColorMode() {
 		const activeThemeIcon = document.querySelector('.theme-icon-active use')
 		const btnToActive = document.querySelector(`[data-bs-theme-value="${theme}"]`)
 		const svgOfActiveBtn = btnToActive.querySelector('svg use').getAttribute('href')
-	
+
 		document.querySelectorAll('[data-bs-theme-value]').forEach(element => {
 			element.classList.remove('active')
 			element.setAttribute('aria-pressed', 'false')
 		})
-	
+
 		btnToActive.classList.add('active')
 		btnToActive.setAttribute('aria-pressed', 'true')
 		activeThemeIcon.setAttribute('href', svgOfActiveBtn)
 		const themeSwitcherLabel = `${themeSwitcherText.textContent} (${btnToActive.dataset.bsThemeValue})`
 		themeSwitcher.setAttribute('aria-label', themeSwitcherLabel)
-	
+
 		if (focus) {
 			themeSwitcher.focus()
 		}
